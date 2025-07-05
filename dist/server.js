@@ -16,16 +16,17 @@ const dotenv_1 = __importDefault(require("dotenv"));
 const app_1 = __importDefault(require("./app"));
 const mongoose_1 = __importDefault(require("mongoose"));
 dotenv_1.default.config();
-let server;
 const main = () => __awaiter(void 0, void 0, void 0, function* () {
-    yield mongoose_1.default.connect(process.env.DATABASE_LINK)
+    yield mongoose_1.default
+        .connect(process.env.DATABASE_LINK)
         .then(() => {
-        console.log("Connected to MongoDB using Moongoose!");
-    }).catch((err) => {
+        console.log('Connected to MongoDB using Moongoose!');
+    })
+        .catch((err) => {
         console.error('MongoDB connection error:', err);
         process.exit(1);
     });
-    server = app_1.default.listen(process.env.PORT, () => {
+    app_1.default.listen(process.env.PORT, () => {
         console.log(`App is listening on port ${process.env.PORT}`);
     });
 });
