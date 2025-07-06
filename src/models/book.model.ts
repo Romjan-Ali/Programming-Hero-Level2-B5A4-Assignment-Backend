@@ -1,4 +1,4 @@
-import { Schema, model, Model, Document } from 'mongoose'
+import { Schema, model, Document } from 'mongoose'
 import IBook from '../interfaces/book.interface'
 
 // Custom Document type to include methods
@@ -13,12 +13,20 @@ const bookSchema = new Schema<BookDocument>(
     genre: {
       type: String,
       required: true,
-      enum: ['FICTION', 'NON_FICTION', 'SCIENCE', 'HISTORY', 'BIOGRAPHY', 'FANTASY']
+      enum: [
+        'FICTION',
+        'NON_FICTION',
+        'SCIENCE',
+        'HISTORY',
+        'BIOGRAPHY',
+        'FANTASY',
+      ],
     },
     isbn: { type: String, required: true, unique: true },
     description: { type: String },
     copies: { type: Number, required: true, min: 0 },
-    available: { type: Boolean, default: true }
+    available: { type: Boolean, default: true },
+    imageUrl: { type: String },
   },
   { timestamps: true }
 )

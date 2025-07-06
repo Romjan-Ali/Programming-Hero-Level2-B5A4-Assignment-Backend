@@ -4,7 +4,7 @@ import {
   createBookZodSchema,
   getAllBooksQuerySchema,
   getBookByIdZodSchema,
-  updateBookZodSchema
+  updateBookZodSchema,
 } from '../validations/book.validation'
 
 // Create a book
@@ -17,7 +17,7 @@ export const createBook = async (req: Request, res: Response): Promise<any> => {
       return res.status(400).json({
         message: 'Validation failed',
         success: false,
-        error: parsed.error.flatten()
+        error: parsed.error.flatten(),
       })
     }
 
@@ -27,7 +27,7 @@ export const createBook = async (req: Request, res: Response): Promise<any> => {
     return res.status(201).json({
       success: true,
       message: 'Book created successfully',
-      data: newBook
+      data: newBook,
     })
   } catch (error: any) {
     return res.status(500).json({
@@ -37,14 +37,17 @@ export const createBook = async (req: Request, res: Response): Promise<any> => {
         name: error.name,
         message: error.message,
         stack: error.stack,
-        ...(error.errors ? { validationErrors: error.errors } : {})
-      }
+        ...(error.errors ? { validationErrors: error.errors } : {}),
+      },
     })
   }
 }
 
 // Get all books
-export const getAllBooks = async (req: Request, res: Response): Promise<any> => {
+export const getAllBooks = async (
+  req: Request,
+  res: Response
+): Promise<any> => {
   try {
     const parsedQuery = getAllBooksQuerySchema.safeParse(req.query)
 
@@ -52,13 +55,17 @@ export const getAllBooks = async (req: Request, res: Response): Promise<any> => 
       return res.status(400).json({
         success: false,
         message: 'Invalid query parameters',
-        error: parsedQuery.error.flatten()
+        error: parsedQuery.error.flatten(),
       })
     }
 
-    const { filter, sortBy, sort, limit } = parsedQuery.data
+    const { filter, author, sortBy, sort, limit } = parsedQuery.data
 
-    const query = filter ? { genre: filter } : {}
+    let query: Record<string, unknown> =
+      filter && filter !== 'ALL' ? { genre: filter } : {}
+
+    if (author && typeof author === 'string' && author !== 'ALL') query = { ...query, author }
+
     const sortOrder = sort === 'asc' ? 1 : -1
 
     const books = await Book.find(query)
@@ -69,25 +76,28 @@ export const getAllBooks = async (req: Request, res: Response): Promise<any> => 
       return res.status(404).json({
         success: true,
         message: 'No book found',
-        data: []
+        data: [],
       })
     }
 
     return res.status(200).json({
       success: true,
       message: 'Books retrieved successfully',
-      data: books
+      data: books,
     })
   } catch (err) {
     return res.status(500).json({
       success: false,
-      message: 'Error getting books'
+      message: 'Error getting books',
     })
   }
 }
 
 // Get book by ID
-export const getBookByUserIdParam = async (req: Request, res: Response): Promise<any> => {
+export const getBookByUserIdParam = async (
+  req: Request,
+  res: Response
+): Promise<any> => {
   try {
     // Validate params using Zod
     const parsedParams = getBookByIdZodSchema.safeParse(req.params)
@@ -96,7 +106,7 @@ export const getBookByUserIdParam = async (req: Request, res: Response): Promise
       return res.status(400).json({
         success: false,
         message: 'Invalid or missing bookId parameter',
-        error: parsedParams.error.flatten()
+        error: parsedParams.error.flatten(),
       })
     }
 
@@ -107,27 +117,30 @@ export const getBookByUserIdParam = async (req: Request, res: Response): Promise
     if (!book) {
       return res.status(404).json({
         success: false,
-        message: 'Book not found'
+        message: 'Book not found',
       })
     }
 
     return res.status(200).json({
       success: true,
       message: 'Book retrieved successfully',
-      data: book
+      data: book,
     })
   } catch (err: any) {
     console.error(err)
     return res.status(500).json({
       success: false,
       message: 'Error getting book',
-      error: err?.message || err
+      error: err?.message || err,
     })
   }
 }
 
 // Update book
-export const bookUpdateById = async (req: Request, res: Response): Promise<any> => {
+export const bookUpdateById = async (
+  req: Request,
+  res: Response
+): Promise<any> => {
   try {
     // Validate the bookId param
     const parsedParams = getBookByIdZodSchema.safeParse(req.params)
@@ -135,7 +148,7 @@ export const bookUpdateById = async (req: Request, res: Response): Promise<any> 
       return res.status(400).json({
         success: false,
         message: 'Invalid bookId',
-        error: parsedParams.error.flatten()
+        error: parsedParams.error.flatten(),
       })
     }
     const { bookId } = parsedParams.data
@@ -146,7 +159,7 @@ export const bookUpdateById = async (req: Request, res: Response): Promise<any> 
       return res.status(400).json({
         success: false,
         message: 'Invalid update payload',
-        error: parsedBody.error.flatten()
+        error: parsedBody.error.flatten(),
       })
     }
 
@@ -173,18 +186,20 @@ export const bookUpdateById = async (req: Request, res: Response): Promise<any> 
       message: 'Book updated successfully',
       data: updatedBook,
     })
-
   } catch (err: any) {
     return res.status(500).json({
       success: false,
       message: 'Error updating a book',
-      error: err?.message || err
+      error: err?.message || err,
     })
   }
 }
 
 // Delete book
-export const bookDeleteById = async (req: Request, res: Response): Promise<any> => {
+export const bookDeleteById = async (
+  req: Request,
+  res: Response
+): Promise<any> => {
   try {
     // Validate bookId
     const parsedParams = getBookByIdZodSchema.safeParse(req.params)
@@ -192,7 +207,7 @@ export const bookDeleteById = async (req: Request, res: Response): Promise<any> 
       return res.status(400).json({
         success: false,
         message: 'Invalid bookId',
-        error: parsedParams.error.flatten()
+        error: parsedParams.error.flatten(),
       })
     }
     const { bookId } = parsedParams.data
@@ -202,20 +217,92 @@ export const bookDeleteById = async (req: Request, res: Response): Promise<any> 
     if (!deletedBook) {
       return res.status(404).json({
         success: false,
-        message: 'Book not found'
+        message: 'Book not found',
       })
     }
 
     return res.status(200).json({
       success: true,
       message: 'Book deleted successfully',
-      data: null
+      data: null,
     })
   } catch (err: any) {
     return res.status(500).json({
       success: false,
       message: 'Error deleting a book',
-      error: err?.message || err
+      error: err?.message || err,
+    })
+  }
+}
+
+// Get all unique authors
+export const getAllAuthors = async (
+  req: Request,
+  res: Response
+): Promise<any> => {
+  try {
+    const authors = await Book.distinct('author')
+    return res.status(200).json({
+      success: true,
+      message: 'All unique authors retrieved successfully',
+      data: authors,
+    })
+  } catch (err: any) {
+    return res.status(500).json({
+      success: false,
+      message: 'Error retrieving authors',
+      error: err?.message || err,
+    })
+  }
+}
+
+// Get all books by author name
+export const getBooksByAuthor = async (
+  req: Request,
+  res: Response
+): Promise<any> => {
+  try {
+    const author = req.query.author as string
+    if (!author) {
+      return res.status(400).json({
+        success: false,
+        message: "Author name is required in query parameter 'author'.",
+      })
+    }
+
+    const books = await Book.find({ author })
+
+    return res.status(200).json({
+      success: true,
+      message: `Books by author '${author}' retrieved successfully`,
+      data: books,
+    })
+  } catch (err: any) {
+    return res.status(500).json({
+      success: false,
+      message: 'Error retrieving books by author',
+      error: err?.message || err,
+    })
+  }
+}
+
+// Get all unique genres
+export const getAllGenres = async (
+  req: Request,
+  res: Response
+): Promise<any> => {
+  try {
+    const genres = await Book.distinct('genre')
+    return res.status(200).json({
+      success: true,
+      message: 'All unique genres retrieved successfully',
+      data: genres,
+    })
+  } catch (err: any) {
+    return res.status(500).json({
+      success: false,
+      message: 'Error retrieving authors',
+      error: err?.message || err,
     })
   }
 }

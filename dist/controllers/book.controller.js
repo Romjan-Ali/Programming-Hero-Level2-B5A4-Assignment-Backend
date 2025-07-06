@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.bookDeleteById = exports.bookUpdateById = exports.getBookByUserIdParam = exports.getAllBooks = exports.createBook = void 0;
+exports.getAllGenres = exports.getBooksByAuthor = exports.getAllAuthors = exports.bookDeleteById = exports.bookUpdateById = exports.getBookByUserIdParam = exports.getAllBooks = exports.createBook = void 0;
 const book_model_1 = __importDefault(require("../models/book.model"));
 const book_validation_1 = require("../validations/book.validation");
 // Create a book
@@ -24,7 +24,7 @@ const createBook = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
             return res.status(400).json({
                 message: 'Validation failed',
                 success: false,
-                error: parsed.error.flatten()
+                error: parsed.error.flatten(),
             });
         }
         // Create book with validated data
@@ -32,14 +32,14 @@ const createBook = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
         return res.status(201).json({
             success: true,
             message: 'Book created successfully',
-            data: newBook
+            data: newBook,
         });
     }
     catch (error) {
         return res.status(500).json({
             message: 'Error creating a book',
             success: false,
-            error: Object.assign({ name: error.name, message: error.message, stack: error.stack }, (error.errors ? { validationErrors: error.errors } : {}))
+            error: Object.assign({ name: error.name, message: error.message, stack: error.stack }, (error.errors ? { validationErrors: error.errors } : {})),
         });
     }
 });
@@ -52,11 +52,13 @@ const getAllBooks = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
             return res.status(400).json({
                 success: false,
                 message: 'Invalid query parameters',
-                error: parsedQuery.error.flatten()
+                error: parsedQuery.error.flatten(),
             });
         }
-        const { filter, sortBy, sort, limit } = parsedQuery.data;
-        const query = filter ? { genre: filter } : {};
+        const { filter, author, sortBy, sort, limit } = parsedQuery.data;
+        let query = filter && filter !== 'ALL' ? { genre: filter } : {};
+        if (author && typeof author === 'string' && author !== 'ALL')
+            query = Object.assign(Object.assign({}, query), { author });
         const sortOrder = sort === 'asc' ? 1 : -1;
         const books = yield book_model_1.default.find(query)
             .limit(limit)
@@ -65,19 +67,19 @@ const getAllBooks = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
             return res.status(404).json({
                 success: true,
                 message: 'No book found',
-                data: []
+                data: [],
             });
         }
         return res.status(200).json({
             success: true,
             message: 'Books retrieved successfully',
-            data: books
+            data: books,
         });
     }
     catch (err) {
         return res.status(500).json({
             success: false,
-            message: 'Error getting books'
+            message: 'Error getting books',
         });
     }
 });
@@ -91,7 +93,7 @@ const getBookByUserIdParam = (req, res) => __awaiter(void 0, void 0, void 0, fun
             return res.status(400).json({
                 success: false,
                 message: 'Invalid or missing bookId parameter',
-                error: parsedParams.error.flatten()
+                error: parsedParams.error.flatten(),
             });
         }
         const { bookId } = parsedParams.data;
@@ -99,13 +101,13 @@ const getBookByUserIdParam = (req, res) => __awaiter(void 0, void 0, void 0, fun
         if (!book) {
             return res.status(404).json({
                 success: false,
-                message: 'Book not found'
+                message: 'Book not found',
             });
         }
         return res.status(200).json({
             success: true,
             message: 'Book retrieved successfully',
-            data: book
+            data: book,
         });
     }
     catch (err) {
@@ -113,7 +115,7 @@ const getBookByUserIdParam = (req, res) => __awaiter(void 0, void 0, void 0, fun
         return res.status(500).json({
             success: false,
             message: 'Error getting book',
-            error: (err === null || err === void 0 ? void 0 : err.message) || err
+            error: (err === null || err === void 0 ? void 0 : err.message) || err,
         });
     }
 });
@@ -127,7 +129,7 @@ const bookUpdateById = (req, res) => __awaiter(void 0, void 0, void 0, function*
             return res.status(400).json({
                 success: false,
                 message: 'Invalid bookId',
-                error: parsedParams.error.flatten()
+                error: parsedParams.error.flatten(),
             });
         }
         const { bookId } = parsedParams.data;
@@ -137,7 +139,7 @@ const bookUpdateById = (req, res) => __awaiter(void 0, void 0, void 0, function*
             return res.status(400).json({
                 success: false,
                 message: 'Invalid update payload',
-                error: parsedBody.error.flatten()
+                error: parsedBody.error.flatten(),
             });
         }
         const bookToUpdate = yield book_model_1.default.findById(bookId);
@@ -163,7 +165,7 @@ const bookUpdateById = (req, res) => __awaiter(void 0, void 0, void 0, function*
         return res.status(500).json({
             success: false,
             message: 'Error updating a book',
-            error: (err === null || err === void 0 ? void 0 : err.message) || err
+            error: (err === null || err === void 0 ? void 0 : err.message) || err,
         });
     }
 });
@@ -177,7 +179,7 @@ const bookDeleteById = (req, res) => __awaiter(void 0, void 0, void 0, function*
             return res.status(400).json({
                 success: false,
                 message: 'Invalid bookId',
-                error: parsedParams.error.flatten()
+                error: parsedParams.error.flatten(),
             });
         }
         const { bookId } = parsedParams.data;
@@ -185,21 +187,85 @@ const bookDeleteById = (req, res) => __awaiter(void 0, void 0, void 0, function*
         if (!deletedBook) {
             return res.status(404).json({
                 success: false,
-                message: 'Book not found'
+                message: 'Book not found',
             });
         }
         return res.status(200).json({
             success: true,
             message: 'Book deleted successfully',
-            data: null
+            data: null,
         });
     }
     catch (err) {
         return res.status(500).json({
             success: false,
             message: 'Error deleting a book',
-            error: (err === null || err === void 0 ? void 0 : err.message) || err
+            error: (err === null || err === void 0 ? void 0 : err.message) || err,
         });
     }
 });
 exports.bookDeleteById = bookDeleteById;
+// Get all unique authors
+const getAllAuthors = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const authors = yield book_model_1.default.distinct('author');
+        return res.status(200).json({
+            success: true,
+            message: 'All unique authors retrieved successfully',
+            data: authors,
+        });
+    }
+    catch (err) {
+        return res.status(500).json({
+            success: false,
+            message: 'Error retrieving authors',
+            error: (err === null || err === void 0 ? void 0 : err.message) || err,
+        });
+    }
+});
+exports.getAllAuthors = getAllAuthors;
+// Get all books by author name
+const getBooksByAuthor = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const author = req.query.author;
+        if (!author) {
+            return res.status(400).json({
+                success: false,
+                message: "Author name is required in query parameter 'author'.",
+            });
+        }
+        const books = yield book_model_1.default.find({ author });
+        return res.status(200).json({
+            success: true,
+            message: `Books by author '${author}' retrieved successfully`,
+            data: books,
+        });
+    }
+    catch (err) {
+        return res.status(500).json({
+            success: false,
+            message: 'Error retrieving books by author',
+            error: (err === null || err === void 0 ? void 0 : err.message) || err,
+        });
+    }
+});
+exports.getBooksByAuthor = getBooksByAuthor;
+// Get all unique genres
+const getAllGenres = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const genres = yield book_model_1.default.distinct('genre');
+        return res.status(200).json({
+            success: true,
+            message: 'All unique genres retrieved successfully',
+            data: genres,
+        });
+    }
+    catch (err) {
+        return res.status(500).json({
+            success: false,
+            message: 'Error retrieving authors',
+            error: (err === null || err === void 0 ? void 0 : err.message) || err,
+        });
+    }
+});
+exports.getAllGenres = getAllGenres;

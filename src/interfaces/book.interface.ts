@@ -1,4 +1,4 @@
-import { Types } from 'mongoose'
+// import { Types } from 'mongoose'
 
 export default interface IBook {
   // _id?: Types.ObjectId
@@ -11,4 +11,5 @@ export default interface IBook {
   available?: boolean
   createdAt?: Date
   updatedAt?: Date
+  imageUrl?: string
 }
